@@ -1,0 +1,21 @@
+{
+  "name": "a2z-garbage-collection",
+  "version": "1.0.0",
+  "description": "Garbage Collection & Managed Runtimes, Heap by Heap — An Explorable Architecture Guide to Tri-Color Marking, Generational GCs, Card Tables, G1GC, and ZGC Colored Pointers",
+  "main": "index.html",
+  "scripts": {
+    "test": "node tests/audit-all-widgets.js"
+  },
+  "keywords": [
+    "garbage-collection",
+    "jvm-internals",
+    "g1gc",
+    "zgc",
+    "tri-color-marking",
+    "card-tables",
+    "generational-heap",
+    "explorable-explanation"
+  ],
+  "author": "Deep Shah",
+  "license": "MIT"
+}
