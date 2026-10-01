@@ -9,6 +9,10 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600..800&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="assets/style.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css" crossorigin="anonymous">
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js" crossorigin="anonymous"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js" crossorigin="anonymous"
+          onload="if (typeof renderMathInElement === 'function') renderMathInElement(document.body, {delimiters: [{left: '$$', right: '$$', display: true}, {left: '$', right: '$', display: false}], throwOnError: false});"></script>
 </head>
 <body>
 
@@ -74,7 +78,7 @@
     </header>
 
     <section class="chapter" id="ref-counting">
-      <div class="ch-meta"><span class="ch-num">01</span><span class="ch-tag">Cycle Leakage</span></div>
+      <div class="ch-meta"><span class="ch-num">01</span> <span class="ch-tag">Cycle Leakage</span></div>
       <h3>Reference Counting vs. Tracing: Cyclic Reference Leakage</h3>
       <p>Automatic memory management divides into two historical paradigms: <strong>Reference Counting (RC)</strong> and <strong>Tracing Garbage Collection</strong>.</p>
       <p>In Reference Counting (used in CPython and Swift ARC), each object maintains an integer tracking the number of active references pointing to it. While RC reclaims memory eagerly when counts hit zero, it suffers from a fatal flaw: <strong>Cyclic Reference Leaks</strong>. If Object A references Object B and Object B references Object A, their reference counts remain $\ge 1$ indefinitely even if the entire graph is severed from all application GC roots! Tracing GC solves this by traversing reachable paths directly from GC roots (thread stacks, JNI registers, static classes).</p>
@@ -84,7 +88,7 @@
     </section>
 
     <section class="chapter" id="tri-color">
-      <div class="ch-meta"><span class="ch-num">02</span><span class="ch-tag">Marking Proofs</span></div>
+      <div class="ch-meta"><span class="ch-num">02</span> <span class="ch-tag">Marking Proofs</span></div>
       <h3>Tri-Color Marking Invariants: White, Grey &amp; Black</h3>
       <p>Formulated by Dijkstra and Steele, the <strong>Tri-Color Abstraction</strong> models the progress of concurrent tracing collectors by categorizing heap objects into three sets:</p>
       <ul>
@@ -99,7 +103,7 @@
     </section>
 
     <section class="chapter" id="barriers">
-      <div class="ch-meta"><span class="ch-num">03</span><span class="ch-tag">Compiler Barriers</span></div>
+      <div class="ch-meta"><span class="ch-num">03</span> <span class="ch-tag">Compiler Barriers</span></div>
       <h3>JIT Barrier Dynamics: Post-Write Card Marking vs. Load Barriers</h3>
       <p>To preserve GC invariants without stopping application threads, JIT compilers inject tiny machine-code instructions around memory access operations:</p>
       <ul>
@@ -113,7 +117,7 @@
     </section>
 
     <section class="chapter" id="mark-compact">
-      <div class="ch-meta"><span class="ch-num">04</span><span class="ch-tag">Compaction Math</span></div>
+      <div class="ch-meta"><span class="ch-num">04</span> <span class="ch-tag">Compaction Math</span></div>
       <h3>Mark-Sweep vs. Mark-Compact: Sliding Compaction</h3>
       <p>Simple <strong>Mark-Sweep</strong> collectors reclaim dead objects in-place, adding free slots to an allocation free-list. Over time, alternating allocations and frees produce severe <strong>External Fragmentation</strong>: memory contains plenty of aggregate free space, but no single contiguous gap large enough to satisfy large array allocations.</p>
       <p><strong>Mark-Compact</strong> collectors solve fragmentation by physically sliding all surviving live objects toward one boundary of the heap, consolidating all remaining space into a single contiguous free block. This allows ultra-fast bump-pointer allocations, at the cost of updating all cross-heap pointers to relocated objects.</p>
@@ -132,7 +136,7 @@
     </header>
 
     <section class="chapter" id="generational-heap">
-      <div class="ch-meta"><span class="ch-num">05</span><span class="ch-tag">Generational GC</span></div>
+      <div class="ch-meta"><span class="ch-num">05</span> <span class="ch-tag">Generational GC</span></div>
       <h3>The Weak Generational Hypothesis: Eden, Survivor &amp; Tenuring</h3>
       <p>Decades of empirical systems analysis across Lisp, Smalltalk, and Java confirm the <strong>Weak Generational Hypothesis</strong>: <em>the vast majority of allocated objects die shortly after creation</em> (infant mortality rates routinely exceed 95% within milliseconds).</p>
       <p>The HotSpot JVM organizes the heap into generations: <strong>Young Generation</strong> (composed of Eden and two alternating Survivor spaces, S0 and S1) and <strong>Tenured (Old) Generation</strong>. New allocations enter Eden. When Eden fills, a fast <strong>Minor GC</strong> copies the few surviving objects into a Survivor space and increments their age counter. Objects that survive multiple collection rounds (exceeding <code>-XX:MaxTenuringThreshold</code>) are promoted into the Old Generation.</p>
@@ -142,7 +146,7 @@
     </section>
 
     <section class="chapter" id="card-tables">
-      <div class="ch-meta"><span class="ch-num">06</span><span class="ch-tag">Cross-Gen Pointers</span></div>
+      <div class="ch-meta"><span class="ch-num">06</span> <span class="ch-tag">Cross-Gen Pointers</span></div>
       <h3>Card Tables &amp; Remembered Sets (RSet): Cross-Generational References</h3>
       <p>If an Old Generation object points to a Young Generation object, a Minor GC must treat the young object as live. However, scanning the entire multi-gigabyte Old Generation to find these references would ruin the sub-10ms pause objective of Minor GC!</p>
       <p>To eliminate full Old Gen scans, the JVM maintains a <strong>Card Table</strong>: a linear byte array where each byte corresponds to a 512-byte "card" of Old Gen memory. Whenever an application thread stores a pointer from Old Gen to Young Gen, the JIT write barrier marks the card <strong>DIRTY (0x00)</strong>. During Minor GC, the collector scans *only* the dirty cards, inspecting just a fraction of a percent of Old Gen memory.</p>
@@ -152,7 +156,7 @@
     </section>
 
     <section class="chapter" id="tlab">
-      <div class="ch-meta"><span class="ch-num">07</span><span class="ch-tag">Allocation Speed</span></div>
+      <div class="ch-meta"><span class="ch-num">07</span> <span class="ch-tag">Allocation Speed</span></div>
       <h3>Thread-Local Allocation Buffers (TLAB) &amp; Bump-the-Pointer</h3>
       <p>On modern servers with 128+ hardware threads, allocating every object directly into a shared global heap would result in catastrophic atomic CAS (Compare-And-Swap) lock contention on the heap top pointer.</p>
       <p>The HotSpot JVM allocates each thread a private <strong>Thread-Local Allocation Buffer (TLAB)</strong> inside Eden. Allocating inside a TLAB requires only a local bump-pointer instruction: <code>top += size; return top;</code> with zero lock contention! Only when a thread exhausts its TLAB does it synchronize with the global heap to allocate a fresh TLAB chunk.</p>
@@ -162,7 +166,7 @@
     </section>
 
     <section class="chapter" id="cms-failure">
-      <div class="ch-meta"><span class="ch-num">08</span><span class="ch-tag">CMS Autopsy</span></div>
+      <div class="ch-meta"><span class="ch-num">08</span> <span class="ch-tag">CMS Autopsy</span></div>
       <h3>CMS Autopsy: Floating Garbage &amp; Concurrent Mode Failure</h3>
       <p>The <strong>Concurrent Mark Sweep (CMS)</strong> collector was the JVM's pioneering low-latency collector. However, because CMS does not compact Old Gen memory (relying on free-lists), it creates severe memory fragmentation.</p>
       <p>Furthermore, because mutator threads run concurrently during sweeping, they create <strong>Floating Garbage</strong> that cannot be collected until the next cycle. If allocation surges outpace concurrent sweeping, or if fragmentation prevents allocating a large promoted object, CMS suffers a <strong>Concurrent Mode Failure</strong>: the JVM triggers an emergency fallback to a single-threaded Serial Mark-Compact collector, freezing production services for tens of seconds!</p>
@@ -181,7 +185,7 @@
     </header>
 
     <section class="chapter" id="g1-regions">
-      <div class="ch-meta"><span class="ch-num">09</span><span class="ch-tag">G1 Architecture</span></div>
+      <div class="ch-meta"><span class="ch-num">09</span> <span class="ch-tag">G1 Architecture</span></div>
       <h3>G1GC Region Architecture: Eden, Survivor, Old &amp; Humongous</h3>
       <p>Introduced to replace CMS, the <strong>Garbage-First (G1) Collector</strong> breaks away from contiguous generational memory spaces. Instead, G1 partitions the entire heap into approximately 2,048 uniform <strong>Regions</strong> (ranging from 1MB to 32MB in powers of two).</p>
       <p>Region roles are assigned dynamically: a region can be Free (<code>F</code>), Eden (<code>E</code>), Survivor (<code>S</code>), or Old (<code>O</code>). Objects that exceed 50% of a region size are classified as <strong>Humongous Objects</strong> and allocated across contiguous runs of dedicated Humongous regions.</p>
@@ -191,7 +195,7 @@
     </section>
 
     <section class="chapter" id="g1-evacuation">
-      <div class="ch-meta"><span class="ch-num">10</span><span class="ch-tag">G1 Evacuation</span></div>
+      <div class="ch-meta"><span class="ch-num">10</span> <span class="ch-tag">G1 Evacuation</span></div>
       <h3>G1GC Mixed Evacuation Set &amp; Pause Time Modeling</h3>
       <p>G1 delivers predictable latency by allowing operators to configure a soft pause time target (e.g. <code>-XX:MaxGCPauseMillis=200</code>). During a <strong>Mixed GC</strong>, G1 evacuates all Young regions plus a selected subset of Old regions.</p>
       <p>G1 uses historical statistical decay models to calculate how long each region will take to evacuate. It sorts Old regions by their garbage ratio and selects the highest-yielding regions that fit within the remaining pause time budget—hence the name <em>Garbage-First</em>!</p>
@@ -201,7 +205,7 @@
     </section>
 
     <section class="chapter" id="zgc-pointers">
-      <div class="ch-meta"><span class="ch-num">11</span><span class="ch-tag">ZGC Internals</span></div>
+      <div class="ch-meta"><span class="ch-num">11</span> <span class="ch-tag">ZGC Internals</span></div>
       <h3>ZGC Colored Pointers &amp; Multi-Mapping Address Space</h3>
       <p>The <strong>Z Garbage Collector (ZGC)</strong> is a scalable low-latency collector designed to handle multi-terabyte heaps with maximum pause times under 1 millisecond. ZGC achieves this by executing virtually all work concurrently with application threads, including object relocation!</p>
       <p>To track object lifecycle state without modifying object headers, ZGC stores metadata directly in the reference pointer via <strong>Colored Pointers</strong>. A 64-bit reference allocates 44 bits for address space (up to 16TB RAM) and 4 bits for GC metadata: <code>Finalizable</code>, <code>Remapped</code>, <code>Marked0</code>, and <code>Marked1</code>. Using OS <code>mmap()</code> multi-mapping, the Linux page table aliases all three color bit combinations to the exact same physical memory frames!</p>
@@ -211,7 +215,7 @@
     </section>
 
     <section class="chapter" id="zgc-barrier">
-      <div class="ch-meta"><span class="ch-num">12</span><span class="ch-tag">Self-Healing</span></div>
+      <div class="ch-meta"><span class="ch-num">12</span> <span class="ch-tag">Self-Healing</span></div>
       <h3>ZGC Self-Healing Load Barriers &amp; Concurrent Relocation</h3>
       <p>How can ZGC move objects to new memory addresses while application threads are actively reading them? Through the <strong>Self-Healing Load Barrier</strong>.</p>
       <p>When an application thread executes <code>o.field</code>, the CPU runs a small test instruction on the pointer's color bit. If the pointer has not yet been updated to the relocated address, the load barrier triggers a brief slow path: it consults ZGC's in-memory forwarding table, updates the heap reference in-place to the new location (<em>Self-Healing!</em>), and returns the new object. All subsequent reads by any thread execute via the single-cycle fast path!</p>
@@ -230,7 +234,7 @@
     </header>
 
     <section class="chapter" id="reference-types">
-      <div class="ch-meta"><span class="ch-num">13</span><span class="ch-tag">Reference Strengths</span></div>
+      <div class="ch-meta"><span class="ch-num">13</span> <span class="ch-tag">Reference Strengths</span></div>
       <h3>Reference Strengths: Soft, Weak, Phantom References &amp; Cleaners</h3>
       <p>Java defines four distinct levels of reference reachability in <code>java.lang.ref</code>:</p>
       <ul>
@@ -245,7 +249,7 @@
     </section>
 
     <section class="chapter" id="safepoints">
-      <div class="ch-meta"><span class="ch-num">14</span><span class="ch-tag">Safepoint Latency</span></div>
+      <div class="ch-meta"><span class="ch-num">14</span> <span class="ch-tag">Safepoint Latency</span></div>
       <h3>JVM Safepoint Mechanics &amp; Time-To-Safepoint (TTSP) Stalls</h3>
       <p>A Stop-The-World (STW) GC pause cannot begin until <em>all</em> active application threads have reached a <strong>Safepoint</strong>—a point in bytecode execution where the thread's stack and register contents are known and consistent.</p>
       <p>The time between the JVM requesting a safepoint and all threads actually stopping is called <strong>Time-To-Safepoint (TTSP)</strong>. If a thread is executing an uncounted loop (e.g. <code>for (int i=0; i&lt;len; i++)</code> without <code>-XX:+UseCountedLoopSafepoints</code>), the JIT compiler strips safepoint polling checks to optimize loop performance. The entire JVM must freeze, waiting seconds for that single thread to complete its loop before GC work can even begin!</p>
