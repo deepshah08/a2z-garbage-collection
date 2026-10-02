@@ -4,7 +4,9 @@
   "description": "Garbage Collection & Managed Runtimes, Heap by Heap — An Explorable Architecture Guide to Tri-Color Marking, Generational GCs, Card Tables, G1GC, and ZGC Colored Pointers",
   "main": "index.html",
   "scripts": {
-    "test": "node tests/audit-all-widgets.js"
+    "test": "node tests/audit-all-widgets.js && python3 tests/e2e-browser-audit.py",
+    "test:unit": "node tests/audit-all-widgets.js",
+    "test:e2e": "python3 tests/e2e-browser-audit.py"
   },
   "keywords": [
     "garbage-collection",
